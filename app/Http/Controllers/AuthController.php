@@ -15,24 +15,33 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6'
+        // Валидация входных данных
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6|confirmed', // confirmed проверяет совпадение с password_confirmation
+        ], [
+            'name.required' => 'Поле имя обязательно',
+            'email.required' => 'Поле email обязательно',
+            'email.email' => 'Введите корректный email',
+            'email.unique' => 'Пользователь с таким email уже существует',
+            'password.required' => 'Пароль обязателен',
+            'password.min' => 'Пароль должен быть минимум 6 символов',
+            'password.confirmed' => 'Пароли не совпадают',
         ]);
 
+        // Создание пользователя
         DB::table('users')->insert([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
             'role' => 'user',
             'created_at' => now(),
             'updated_at' => now()
         ]);
 
-
-
-        return redirect('/login');
+        // Редирект с сообщением об успешной регистрации
+        return redirect('/login')->with('success', 'Регистрация прошла успешно. Войдите в аккаунт.');
     }
 
     public function showLogin()
